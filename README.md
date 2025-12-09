@@ -25,19 +25,17 @@ This provider implements the Virtual Kubelet interface to enable Kubernetes work
 
 ### Build
 
-```bash
-make build
-# Binary created at: bin/vk-flightctl-provider
-```
+podman build -t quay.io/<repo>/codeconk8:latest .
+podman push quay.io/<repo>/codeconk8:latest
+
 
 ### Configuration
 
-Set required environment variables:
+Set required configmap (vk-flightctl-config) variables:
 
 ```bash
-export FLIGHTCTL_API_URL="https://flightctl.example.com"
-export FLIGHTCTL_AUTH_TOKEN="your-api-token"
-export NODE_NAME="vk-flightctl-node"  # optional, defaults to "vk-flightctl-node"
+FLIGHTCTL_API_URL="https://flightctl.example.com"
+FLIGHTCTL_AUTH_TOKEN="your-api-token"
 ```
 
 Optional configuration:
@@ -46,19 +44,23 @@ Optional configuration:
 export FLIGHTCTL_INSECURE_TLS="true"  # Skip TLS verification (testing only)
 ```
 
-### Run
-
+also add the ClientID and Secret to the Secret (vk-flightctl-oauth) file. These values are taken from Keycloak 
+    *note keycloak is only part of flightctl prior to ver1.0
 ```bash
-./bin/vk-flightctl-provider
+ClientID=
+Secret=
 ```
 
-Expected output:
-```
-Starting VK-Flightctl Provider...
-Successfully connected to Flightctl API
-Virtual node 'vk-flightctl-node' initialized with capacity: CPU=4, Memory=8Gi
-Provider is running. Press Ctrl+C to exit.
-```
+#### Create a FlightCtl Device
+/docs/create devices.md
+
+### Deploy platform
+Deploy the K8s resources in /deploy 
+
+### Deploy a Test Application
+/examples/app.yaml
+
+
 
 ## Project Structure
 
