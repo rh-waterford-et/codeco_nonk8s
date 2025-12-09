@@ -58,7 +58,7 @@ Secret=<>
 Deploy the K8s resources in /deploy 
 
 
-#### Create a FlightCtl Device
+### Create a FlightCtl Device
 [Create a Device](/docs/create_devices)
 
 
