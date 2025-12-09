@@ -1,0 +1,33 @@
+FROM quay.io/centos-bootc/centos-bootc:stream9
+
+#RUN dnf -y install selinux-policy-targeted && \
+#    dnf -y copr enable @redhat-et/flightctl && \
+#    dnf -y install flightctl-agent && \
+#    dnf -y clean all
+
+#RUN systemctl enable flightctl-agent.service
+
+RUN dnf -y config-manager --add-repo https://rpm.flightctl.io/flightctl-epel.repo && \
+    dnf -y install flightctl-agent; \
+    dnf -y clean all; \
+    systemctl enable flightctl-agent.service
+
+# Optional: to enable podman-compose application support uncomment below"
+RUN dnf -y install epel-release epel-next-release && \
+    dnf -y install podman-compose && \
+    systemctl enable podman.service
+
+ADD config.yaml /etc/flightctl/config.yaml
+
+RUN echo "root:password" | chpasswd
+
+# Configure auto-login for root user on tty1
+#RUN mkdir -p /etc/systemd/system/getty@tty1.service.d/ && \
+#    tee /etc/systemd/system/getty@tty1.service.d/override.conf > /dev/null <<EOF
+#[Service]
+#ExecStart=
+#ExecStart=-/sbin/agetty --autologin root --noclear %I \$TERM
+#EOF
+
+#RUN sed -i 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
+RUN rm -rf /var/cache /var/log/dnf* /var/log/yum.*

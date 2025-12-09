@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vk-flightctl-config
+  namespace: codeco
+  labels:
+    app: vk-flightctl-provider
+data:
+  flightctl-api-url: "https://api.flightctl-ray-test.apps.ocp-rh-aio1.waltoninstitute.ie/"
+  flightctl-token-url: "https://auth.flightctl-ray-test.apps.ocp-rh-aio1.waltoninstitute.ie/realms/flightctl/protocol/openid-connect/token"
+  flightctl-insecure-tls: "true"

@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-on-fleet
+  namespace: default
+  labels:
+    app: distributed-app
+  annotations:
+    # Specify a FlightCtl fleet - pod will be deployed to any device in this fleet
+    # NOTE: Fleet-based selection is not yet implemented and will return an error
+    flightctl.io/fleet-id: "production-fleet-east"
+spec:
+  # Ensure pod is scheduled to the FlightCtl virtual kubelet node
+  nodeSelector:
+    type: virtual-kubelet
+  tolerations:
+  - key: vkubelet
+    operator: Equal
+    value: flightctl
+    effect: NoSchedule
+
+  containers:
+  - name: app
+    image: myapp:v1.0
+    ports:
+    - containerPort: 8080
+      name: http
+    env:
+    - name: APP_ENV
+      value: "production"
+    - name: REGION
+      value: "east"
+
+  restartPolicy: Always
+
+---
+# NOTE: The above pod will currently fail with:
+# Error: fleet-based device selection not yet implemented (fleet: production-fleet-east)
+#
+# To use this example, either:
+# 1. Wait for fleet selection to be implemented
+# 2. Change to use flightctl.io/device-id instead:
+#    annotations:
+#      flightctl.io/device-id: "specific-device-id"

@@ -66,7 +66,7 @@ type WorkloadManager interface {
 	// - deviceID: Target device
 	// - spec: Workload specification (containers, resources, etc.)
 	// Returns workload ID assigned by Flightctl.
-	DeployWorkload(ctx context.Context, deviceID string, spec *WorkloadSpec) (workloadID string, error)
+	DeployWorkload(ctx context.Context, deviceID string, spec *WorkloadSpec) (string, error)
 
 	// UpdateWorkload updates an existing workload.
 	// Implementation: Delete old workload, deploy new one (simple replace).

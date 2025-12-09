@@ -1,0 +1,65 @@
+# Optional: Security Context Constraint for VK-Flightctl Provider
+# Only apply this if the default restricted-v2 SCC is insufficient
+#
+# Usage:
+#   oc apply -f scc.yaml
+#
+# The deployment should work with the default restricted-v2 SCC.
+# Only use this custom SCC if you encounter permission issues.
+
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: vk-flightctl-scc
+  annotations:
+    kubernetes.io/description: |
+      Security Context Constraint for Virtual Kubelet Flightctl Provider.
+      Allows non-root execution with minimal permissions required for
+      virtual kubelet operations.
+# Do not allow privileged or host access
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+
+# No additional capabilities
+allowedCapabilities: []
+defaultAddCapabilities: []
+
+# Drop all capabilities
+requiredDropCapabilities:
+- ALL
+
+# Filesystem settings
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false  # Set to true if app doesn't need filesystem writes
+
+# User and group settings
+runAsUser:
+  type: MustRunAsRange  # OpenShift assigns UID from namespace range
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+
+# Allowed volume types
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
+
+# Priority (lower number = higher priority, null = default)
+priority: null
+
+# Users and groups who can use this SCC
+users:
+- system:serviceaccount:codeco:vk-flightctl-provider
+
+groups: []

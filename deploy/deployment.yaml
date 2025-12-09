@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vk-flightctl-provider
+  namespace: codeco
+  labels:
+    app: vk-flightctl-provider
+    component: virtual-kubelet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vk-flightctl-provider
+  template:
+    metadata:
+      labels:
+        app: vk-flightctl-provider
+        component: virtual-kubelet
+    spec:
+      serviceAccountName: vk-flightctl-provider
+      containers:
+      - name: vk-flightctl-provider
+        image: quay.io/rh_et_wd/codeco/codeconk8:latest
+        imagePullPolicy: Always
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: FLIGHTCTL_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: vk-flightctl-config
+              key: flightctl-api-url
+        - name: FLIGHTCTL_TOKEN_URL
+          valueFrom:
+            configMapKeyRef:
+              name: vk-flightctl-config
+              key: flightctl-token-url
+        - name: FLIGHTCTL_INSECURE_TLS
+          valueFrom:
+            configMapKeyRef:
+              name: vk-flightctl-config
+              key: flightctl-insecure-tls
+              optional: true
+        - name: FLIGHTCTL_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: vk-flightctl-oauth
+              key: client-id
+        - name: FLIGHTCTL_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: vk-flightctl-oauth
+              key: client-secret
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault

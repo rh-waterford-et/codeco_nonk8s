@@ -133,9 +133,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: nginx-edge
-  namespace: default
+  namespace: codeco
 spec:
-  nodeName: vk-flightctl-edge-fleet-1
+  nodeName: vk-flightctl-node
   containers:
   - name: nginx
     image: nginx:alpine

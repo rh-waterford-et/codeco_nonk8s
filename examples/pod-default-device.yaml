@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-default
+  namespace: default
+  labels:
+    app: nginx
+  # No flightctl.io/device-id annotation - will use default device
+spec:
+  # Ensure pod is scheduled to the FlightCtl virtual kubelet node
+  nodeSelector:
+    type: virtual-kubelet
+  tolerations:
+  - key: vkubelet
+    operator: Equal
+    value: flightctl
+    effect: NoSchedule
+
+  containers:
+  - name: nginx
+    image: nginx:1.21
+    ports:
+    - containerPort: 80
+      name: http
+    env:
+    - name: NGINX_HOST
+      value: "0.0.0.0"
+    - name: NGINX_PORT
+      value: "80"
+
+  restartPolicy: Always

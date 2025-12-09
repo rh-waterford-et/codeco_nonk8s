@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vk-flightctl-provider
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Test files
+*_test.go
+testdata/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Kubernetes manifests
+deploy/
+k8s/
+*.yaml
+*.yml
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Specs and examples
+specs/
+examples/
+
+# Important: DO NOT ignore vendor/ - it's needed for offline builds
+# vendor/

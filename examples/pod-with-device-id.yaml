@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-on-device
+  namespace: default
+  labels:
+    app: nginx
+  annotations:
+    # Specify the FlightCtl device to deploy this pod to
+    flightctl.io/device-id: "d1k9ppdrurp23cfmj554f4rtt4f8uvo9mba4sp3in9arhli44ot0"
+spec:
+  # Ensure pod is scheduled to the FlightCtl virtual kubelet node
+  nodeSelector:
+    type: virtual-kubelet
+  tolerations:
+  - key: vkubelet
+    operator: Equal
+    value: flightctl
+    effect: NoSchedule
+
+  containers:
+  - name: nginx
+    image: nginx:1.21
+    ports:
+    - containerPort: 80
+      name: http
+    env:
+    - name: NGINX_HOST
+      value: "0.0.0.0"
+    - name: NGINX_PORT
+      value: "80"
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+
+  restartPolicy: Always
