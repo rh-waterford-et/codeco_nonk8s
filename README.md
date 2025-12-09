@@ -24,14 +24,14 @@ This provider implements the Virtual Kubelet interface to enable Kubernetes work
 - Flightctl API authentication token
 
 ### Build
-
+```bash
 podman build -t quay.io/<repo>/codeconk8:latest .
 podman push quay.io/<repo>/codeconk8:latest
-
+```
 
 ### Configuration
 
-Set required configmap (vk-flightctl-config) variables:
+Set required configmap (**vk-flightctl-config**) variables:
 
 ```bash
 FLIGHTCTL_API_URL="https://flightctl.example.com"
@@ -44,21 +44,21 @@ Optional configuration:
 export FLIGHTCTL_INSECURE_TLS="true"  # Skip TLS verification (testing only)
 ```
 
-also add the ClientID and Secret to the Secret (vk-flightctl-oauth) file. These values are taken from Keycloak 
+also add the ClientID and Secret to the Secret (**vk-flightctl-oauth**) file. These values are taken from Keycloak 
     *note keycloak is only part of flightctl prior to ver1.0
 ```bash
-ClientID=
-Secret=
+ClientID=<>
+Secret=<>
 ```
 
 #### Create a FlightCtl Device
-/docs/create devices.md
+[Create a Device](/docs/create_devices)
 
 ### Deploy platform
 Deploy the K8s resources in /deploy 
 
 ### Deploy a Test Application
-/examples/app.yaml
+Deploy a sample application with neccessary [Annotation](/docs/DEVICE_SELECTION.md) and Toleration: [app.yaml](/examples/app.yaml)
 
 
 
