@@ -1,12 +1,26 @@
+
+## Login to FlightCtl
+```bash
 flightctl login https://api.flightctlurl --insecure-skip-tls-verify --username <username> --password <password>
+```
 
+## Generate the device Enrollment config
+```bash
 flightctl certificate request --signer=enrollment --expiration=365d --output=embedded > agentconfig.yaml
+```
 
+## Build the container image
+
+```bash
 podman build -t quay.io/rcarroll/codeco/centos-bootc-flightctl:v2 -f TestDevice .
 
 podman push quay.io/rcarroll/codeco/centos-bootc-flightctl:v2
+```
 
+## Build the bootc image
+```bash
 mkdir -p output &&   sudo podman run --rm -it --privileged --pull=newer --security-opt label=type:unconfined_t     -v ${PWD}/output:/output -v /var/lib/containers/storage:/var/lib/containers/storage     quay.io/centos-bootc/bootc-image-builder:latest     --type raw quay.io/rcarroll/codeco/centos-bootc-flightctl:v2
+```
 
-
-Launch VM from image create in Output directory (e.g. with VirtManager or similar)
+## Launch VM 
+Launvh from image create in Output directory (e.g. with VirtManager or similar)

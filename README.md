@@ -24,6 +24,9 @@ This provider implements the Virtual Kubelet interface to enable Kubernetes work
 - Flightctl API authentication token
 
 ### Build
+See full details here: [Build, deploy and configure](/docs/Build_and_Deploy.md)
+
+
 ```bash
 podman build -t quay.io/<repo>/codeconk8:latest .
 podman push quay.io/<repo>/codeconk8:latest
@@ -51,11 +54,13 @@ ClientID=<>
 Secret=<>
 ```
 
+### Deploy platform
+Deploy the K8s resources in /deploy 
+
+
 #### Create a FlightCtl Device
 [Create a Device](/docs/create_devices)
 
-### Deploy platform
-Deploy the K8s resources in /deploy 
 
 ### Deploy a Test Application
 Deploy a sample application with neccessary [Annotation](/docs/DEVICE_SELECTION.md) and Toleration: [app.yaml](/examples/app.yaml)
