@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/raycarroll/vk-flightctl-provider/pkg/logger"
 )
 
 // Client wraps the Flightctl HTTP API.
@@ -196,7 +198,7 @@ func NewClient(cfg Config) (*Client, error) {
 
 // Ping checks if the Flightctl API is reachable.
 func (c *Client) Ping(ctx context.Context) error {
-	println("Ping " + c.baseURL + "/api/v1/fleets")
+	logger.Debug("Ping %s/api/v1/fleets", c.baseURL)
 	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/api/v1/fleets", nil)
 	if err != nil {
 		return fmt.Errorf("creating ping request: %w", err)

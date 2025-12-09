@@ -1,0 +1,48 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+  resourceVersion: '145069884'
+  name: sample-web-deploymen
+  namespace: codeco
+  labels:
+    app: sample-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: sample-app
+        tier: frontend
+      annotations:
+        flightctl.io/device-id: d1k9ppdrurp23cfmj554f4rtt4f8uvo9mba4sp3in9arhli44ot0
+        #flightctl.io/fleet-id: xxx 
+    spec:
+      containers:
+        - name: nginx-container
+          image: 'docker.io/nginx:latest'
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 250m
+              memory: 64Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      tolerations:
+        - key: vkubelet-flightctl
+          operator: Exists

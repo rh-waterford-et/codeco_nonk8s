@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/raycarroll/vk-flightctl-provider/pkg/flightctl"
+	"github.com/raycarroll/vk-flightctl-provider/pkg/logger"
 	"github.com/raycarroll/vk-flightctl-provider/pkg/models"
 )
 
@@ -87,7 +88,7 @@ func (p *Provider) syncPodStatusLoop() {
 	for {
 		select {
 		case <-p.reconcileCtx.Done():
-			fmt.Println("Status reconciliation loop stopped")
+			logger.Info("Status reconciliation loop stopped")
 			return
 		case <-ticker.C:
 			p.reconcilePodStatus()
@@ -117,7 +118,7 @@ func (p *Provider) reconcilePodStatus() {
 
 		status, err := p.podManager.GetPodStatus(context.Background(), pod, mapping.DeviceID)
 		if err != nil {
-			fmt.Printf("Failed to get status for pod %s/%s: %v\n", mapping.Namespace, mapping.Name, err)
+			logger.Error("Failed to get status for pod %s/%s: %v", mapping.Namespace, mapping.Name, err)
 			continue
 		}
 
@@ -151,20 +152,20 @@ func (p *Provider) selectDeviceForPod(pod *corev1.Pod) (string, error) {
 
 	// Check for direct device ID annotation
 	if deviceID, ok := pod.Annotations[deviceIDAnnotation]; ok && deviceID != "" {
-		fmt.Printf("Pod %s/%s has device-id annotation: %s\n", pod.Namespace, pod.Name, deviceID)
+		logger.Info("Pod %s/%s has device-id annotation: %s", pod.Namespace, pod.Name, deviceID)
 		return deviceID, nil
 	}
 
 	// Check for fleet ID annotation
 	if fleetID, ok := pod.Annotations[fleetIDAnnotation]; ok && fleetID != "" {
-		fmt.Printf("Pod %s/%s has fleet-id annotation: %s\n", pod.Namespace, pod.Name, fleetID)
+		logger.Info("Pod %s/%s has fleet-id annotation: %s", pod.Namespace, pod.Name, fleetID)
 		// TODO: Implement fleet selection - query FlightCtl API for devices in fleet
 		// For now, return error to indicate this is not yet implemented
 		return "", fmt.Errorf("fleet-based device selection not yet implemented (fleet: %s)", fleetID)
 	}
 
 	// No annotations - use default device
-	fmt.Printf("Pod %s/%s has no device/fleet annotations, using default device: %s\n",
+	logger.Info("Pod %s/%s has no device/fleet annotations, using default device: %s",
 		pod.Namespace, pod.Name, defaultDeviceID)
 	return defaultDeviceID, nil
 }
@@ -173,7 +174,7 @@ func (p *Provider) selectDeviceForPod(pod *corev1.Pod) (string, error) {
 
 // CreatePod deploys a pod to an edge device.
 func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
-	println("Provider Create Pod ", pod.Name)
+	logger.Info("Provider Create Pod %s", pod.Name)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -185,7 +186,7 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 		return fmt.Errorf("selecting device for pod: %w", err)
 	}
 
-	fmt.Printf("Deploying pod %s to device %s\n", podKey, deviceID)
+	logger.Info("Deploying pod %s to device %s", podKey, deviceID)
 
 	// Deploy to Flightctl
 	if err := p.podManager.DeployPod(ctx, pod, deviceID); err != nil {
@@ -211,13 +212,13 @@ func (p *Provider) CreatePod(ctx context.Context, pod *corev1.Pod) error {
 
 	p.podMappings[podKey] = mapping
 
-	fmt.Printf("Pod %s created with initial Pending status\n", podKey)
+	logger.Info("Pod %s created with initial Pending status", podKey)
 	return nil
 }
 
 // UpdatePod updates a pod on an edge device.
 func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
-	println("Provider Update Pod ", pod.Name)
+	logger.Info("Provider Update Pod %s", pod.Name)
 	p.mu.RLock()
 	podKey := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 	mapping := p.podMappings[podKey]
@@ -232,7 +233,7 @@ func (p *Provider) UpdatePod(ctx context.Context, pod *corev1.Pod) error {
 
 // DeletePod removes a pod from an edge device.
 func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
-	println("Provider Delete Pod ", pod.Name)
+	logger.Info("Provider Delete Pod %s", pod.Name)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -257,7 +258,7 @@ func (p *Provider) DeletePod(ctx context.Context, pod *corev1.Pod) error {
 
 // GetPod retrieves a pod's current status.
 func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
-	println("Provider Get Pod ", name)
+	logger.Debug("Provider Get Pod %s", name)
 	p.mu.RLock()
 	podKey := fmt.Sprintf("%s/%s", namespace, name)
 	mapping := p.podMappings[podKey]
@@ -302,7 +303,7 @@ func (p *Provider) GetPod(ctx context.Context, namespace, name string) (*corev1.
 
 // GetPods retrieves all pods managed by this provider.
 func (p *Provider) GetPods(ctx context.Context) ([]*corev1.Pod, error) {
-	println("Provider Get Pods")
+	logger.Debug("Provider Get Pods")
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -352,7 +353,7 @@ func (p *Provider) NotifyNodeStatus(ctx context.Context, callback func(*corev1.N
 	node, err := p.GetNode(ctx)
 	if err != nil {
 		// Log error but don't block - NotifyNodeStatus should not return errors
-		fmt.Printf("Error getting node status: %v\n", err)
+		logger.Error("Error getting node status: %v", err)
 		return
 	}
 	callback(node)
@@ -361,7 +362,7 @@ func (p *Provider) NotifyNodeStatus(ctx context.Context, callback func(*corev1.N
 // GetNode returns the virtual node representing edge devices.
 func (p *Provider) GetNode(ctx context.Context) (*corev1.Node, error) {
 	// Minimal implementation with mock capacity
-	println("Getting Node: ", p.nodeName)
+	logger.Debug("Getting Node: %s", p.nodeName)
 	node := &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: p.nodeName,

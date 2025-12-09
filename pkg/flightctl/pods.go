@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/raycarroll/vk-flightctl-provider/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,18 +28,18 @@ func NewPodManager(client *Client) *PodManager {
 // DeployPod deploys a Kubernetes pod to a Flightctl device.
 // Fetches the existing Device, adds the pod as a new application, and updates the Device.
 func (pm *PodManager) DeployPod(ctx context.Context, pod *corev1.Pod, deviceID string) error {
-	println("PodManager.DeployPod() for pod", pod.Name, "on device", deviceID)
+	logger.Info("PodManager.DeployPod() for pod %s on device %s", pod.Name, deviceID)
 
 	// Step 1: Get the existing Device resource
-	fmt.Println("Retrieve Device info from flightctl")
+	logger.Debug("Retrieve Device info from flightctl")
 	device, err := pm.getDevice(ctx, deviceID)
 	if err != nil {
-		fmt.Printf("getting device %s: %s \n", deviceID, err.Error())
+		logger.Error("getting device %s: %s", deviceID, err.Error())
 		return fmt.Errorf("getting device %s: %w", deviceID, err)
 	}
 
 	// Step 2: Convert pod to Flightctl Application
-	fmt.Printf("Converting Pod to FlightCTL App Spec")
+	logger.Debug("Converting Pod to FlightCTL App Spec")
 	newApp := pm.podToFlightctlApplication(pod)
 
 	// Step 3: Check if application already exists and remove it (update scenario)
@@ -54,7 +55,7 @@ func (pm *PodManager) DeployPod(ctx context.Context, pod *corev1.Pod, deviceID s
 	device.Spec.Applications = existingApps
 	device.Status = nil
 
-	fmt.Printf("Updated device with %d applications\n", len(device.Spec.Applications))
+	logger.Info("Updated device with %d applications", len(device.Spec.Applications))
 
 	// Step 5: Update the Device resource
 	return pm.updateDevice(ctx, deviceID, device)
@@ -63,7 +64,7 @@ func (pm *PodManager) DeployPod(ctx context.Context, pod *corev1.Pod, deviceID s
 // UpdatePod updates a pod on a device (simple replace strategy).
 func (pm *PodManager) UpdatePod(ctx context.Context, pod *corev1.Pod, deviceID string) error {
 	// Simple replace: delete then deploy
-	println("PodManager.UpdatePod() for pod", pod.Name, "on device", deviceID)
+	logger.Info("PodManager.UpdatePod() for pod %s on device %s", pod.Name, deviceID)
 	_ = pm.DeletePod(ctx, pod, deviceID) // Ignore error if not exists
 	return pm.DeployPod(ctx, pod, deviceID)
 }
@@ -71,7 +72,7 @@ func (pm *PodManager) UpdatePod(ctx context.Context, pod *corev1.Pod, deviceID s
 // DeletePod removes a pod from a device by removing its application from the Device spec.
 // This operation is idempotent - if the application doesn't exist, no error is returned.
 func (pm *PodManager) DeletePod(ctx context.Context, pod *corev1.Pod, deviceID string) error {
-	println("PodManager.DeletePod() for pod", pod.Name, "on device", deviceID)
+	logger.Info("PodManager.DeletePod() for pod %s on device %s", pod.Name, deviceID)
 
 	// Step 1: Get the existing Device resource
 	device, err := pm.getDevice(ctx, deviceID)
@@ -95,14 +96,14 @@ func (pm *PodManager) DeletePod(ctx context.Context, pod *corev1.Pod, deviceID s
 
 	// If application wasn't found, that's OK (idempotent)
 	if !found {
-		fmt.Printf("Application %s not found on device %s (already deleted)\n", appName, deviceID)
+		logger.Info("Application %s not found on device %s (already deleted)", appName, deviceID)
 		return nil
 	}
 
 	// Step 4: Update the device with the filtered application list
 	device.Spec.Applications = updatedApps
 	device.Status = nil
-	fmt.Printf("Removing application %s from device %s (%d applications remaining)\n", appName, deviceID, len(updatedApps))
+	logger.Info("Removing application %s from device %s (%d applications remaining)", appName, deviceID, len(updatedApps))
 
 	return pm.updateDevice(ctx, deviceID, device)
 }
@@ -257,20 +258,20 @@ func (pm *PodManager) getDevice(ctx context.Context, deviceID string) (*Flightct
 
 	resp, err := pm.client.httpClient.Do(req)
 	if err != nil {
-		fmt.Println("GET request failed: %w", err)
+		logger.Error("GET request failed: %v", err)
 		return nil, fmt.Errorf("GET request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		println("GET device failed with status %d: %s", resp.StatusCode, string(bodyBytes))
+		logger.Error("GET device failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("GET device failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var device FlightctlDevice
 	if err := json.NewDecoder(resp.Body).Decode(&device); err != nil {
-		fmt.Printf("decoding device: %s \n", err.Error())
+		logger.Error("decoding device: %s", err.Error())
 		return nil, fmt.Errorf("decoding device: %w", err)
 	}
 
@@ -293,7 +294,7 @@ func (pm *PodManager) updateDevice(ctx context.Context, deviceID string, device 
 
 	req.Header.Set("Content-Type", "application/json")
 
-	fmt.Printf("Updating device %s with payload:\n%s\n", deviceID, string(body))
+	logger.Debug("Updating device %s with payload:\n%s", deviceID, string(body))
 
 	resp, err := pm.client.httpClient.Do(req)
 	if err != nil {
@@ -304,11 +305,11 @@ func (pm *PodManager) updateDevice(ctx context.Context, deviceID string, device 
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		fmt.Printf("update device failed with status %d: %s", resp.StatusCode, string(bodyBytes))
+		logger.Error("update device failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 		return fmt.Errorf("update device failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
-	fmt.Printf("Successfully updated device %s\n", deviceID)
+	logger.Info("Successfully updated device %s", deviceID)
 	return nil
 }
 
@@ -478,7 +479,7 @@ func (pm *PodManager) podToFlightctlApplication(pod *corev1.Pod) FlightctlApplic
 	//}
 
 	//TODO: STEP2: Convert the pod to a docker compose format and add inline
-	fmt.Printf("Creating Inline Content Section")
+	logger.Debug("Creating Inline Content Section")
 	var inlineContent InlineContent
 	var inlineContentArray []InlineContent
 
@@ -488,9 +489,9 @@ func (pm *PodManager) podToFlightctlApplication(pod *corev1.Pod) FlightctlApplic
 
 	jsonBytes, err := json.MarshalIndent(inlineContent, "", "  ")
 	if err != nil {
-		fmt.Printf("Error marshaling: %v\n", err)
+		logger.Error("Error marshaling: %v", err)
 	} else {
-		fmt.Printf("PodToCompose:\n%s\n", string(jsonBytes))
+		logger.Debug("PodToCompose:\n%s", string(jsonBytes))
 	}
 
 	return FlightctlApplication{
